@@ -328,7 +328,7 @@ class Catalog(pd.DataFrame):
             t_str[1] = t_str[1][10:]
         return " - ".join(t_str)
 
-    def plot_fov(self, ax, **kwargs):
+    def plot_fov(self, ax, Nfov_max, legend_fontsize, legend_ncol, numberlabel_fontsize, **kwargs):
         """
         Plot SPICE FOVs on a background map
 
@@ -357,25 +357,28 @@ class Catalog(pd.DataFrame):
         else:
             fovs = Catalog(data_frame=self[list(required_columns)])
 
-        fovs = fovs.sort_values(by=["DATE"])
-        Nfov = 1 * len(fovs)
-        if Nfov > 12:
-            fovs = fovs[0:12]
+        fovs = fovs.sort_values(by=["DATE-BEG"])
+        Nfov = len(fovs)
+        if Nfov > Nfov_max:
+            fovs = fovs[0:Nfov_max]
             print(
-                f"WARNING: The selected catalog contains more observations ({Nfov}) than "
-                "can be displayed. Only the first 12 observations are shown."
-            )
+                "\n WARNING: The selected catalog contains more observations (%i) than the chosen maximum number of observations (%i). Only the first <Nfov_max> = %i observations are shown.(Also note, that the background image time is currently computed from the mean time of all catalog observations, not of all shown ones.)\n "%(Nfov, Nfov_max, Nfov_max) 
+                )
 
         # label at the position of the plot
         fovs["fov_text"] = fovs.apply(Catalog._format_time_range, axis=1)
         # label at the level of the plot (will be de-duplicated afterwards)
 
+        
         fov_labels = np.arange(1, len(fovs) + 1)
         fov_labels = fov_labels.astype(str)
         fovs["fov_textlabel"] = fov_labels
         fovs["fov_label"] = fovs.apply(
-            lambda row: f"{row.STUDY} ({row.MISOSTUD}) \n {row.DATE}", axis=1
-        )
+            #lambda row: f"{row.STUDY} ({row.MISOSTUD}) \n {row.DATE}", axis=1)
+            #lambda row: f"{row.STUDY} ({row.MISOSTUD}) \n %s - %s"%(str(row["DATE-BEG"])[:-7], str(row["DATE-BEG"]+pd.Timedelta(seconds=row.TELAPSE))[:-7]), axis=1)            
+            lambda row: f"{row.STUDY} ({row.MISOSTUD}) \n %s - %s"%(str(row["DATE-BEG"])[:-7], str(row["last_DATE-BEG"]+pd.Timedelta(seconds=row.TELAPSE))[:-7]), axis=1)            
+        print("fovs[fov_label]",fovs["fov_label"])
+        
 
         # color(s)
         color = kwargs.pop("color", None)
@@ -390,7 +393,7 @@ class Catalog(pd.DataFrame):
         study_color = dict(zip(studies, cycle(colors)))
         fovs["fov_color"] = fovs.apply(lambda row: study_color[row.STUDY], axis=1)
         fovs.apply(
-            lambda row: FileMetadata(row).plot_fov(ax, **kwargs),
+            lambda row: FileMetadata(row).plot_fov(ax, numberlabel_fontsize, **kwargs),
             axis=1,
         )
 
@@ -401,7 +404,7 @@ class Catalog(pd.DataFrame):
             fovs_last["fov_linestyle"] = ":"
             fovs_last = fovs_last[fovs_last.RASTERNO != 0]
             fovs_last.apply(
-                lambda row: FileMetadata(row).plot_fov(ax, **kwargs),
+                lambda row: FileMetadata(row).plot_fov(ax, numberlabel_fontsize,**kwargs),
                 axis=1,
             )
 
@@ -410,6 +413,20 @@ class Catalog(pd.DataFrame):
         handles, labels = ax.get_legend_handles_labels()
         # unique_indices = [labels.index(x) for x in sorted(set(labels))]
         # handles = list(np.array(handles)[unique_indices])
+
+        if legend_fontsize=="standard":
+            legend_fontsize_hmi="x-large"
+            legend_fontsize_eui="xx-large"
+        else:
+            legend_fontsize_hmi=legend_fontsize    
+            legend_fontsize_eui=legend_fontsize    
+        
+        if legend_ncol=="standard":
+            legend_ncol_hmi=3
+            legend_ncol_eui=1
+        else:
+            legend_ncol_hmi=legend_ncol    
+            legend_ncol_eui=legend_ncol    
 
         box = ax.get_position()
         maptitle = ax.get_title()
@@ -428,8 +445,8 @@ class Catalog(pd.DataFrame):
                 labels=labels_mod,
                 loc="lower center",
                 bbox_to_anchor=(0.5, -0.6),
-                ncols=3,
-                fontsize="x-large",
+                ncols=legend_ncol_hmi,
+                fontsize=legend_fontsize_hmi,
                 borderaxespad=2,
             )
 
@@ -447,7 +464,9 @@ class Catalog(pd.DataFrame):
                 handles=handles,
                 labels=labels_mod,
                 bbox_to_anchor=(1.1, 1.07),
-                loc="upper left",
-                fontsize="xx-large",
+                loc="upper left", ncols=legend_ncol_eui,
+                fontsize=legend_fontsize_eui,
                 borderaxespad=2,
             )
+        #print("test sospice fov")
+        print(legend_ncol) 

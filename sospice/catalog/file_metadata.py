@@ -401,7 +401,7 @@ class FileMetadata:
             fov_coords = SkyCoord(fov_all_coords)
         return fov_coords
 
-    def plot_fov(self, ax, **kwargs):
+    def plot_fov(self, ax, numberlabel_fontsize, **kwargs):
         """
         Plot SPICE FOV on a background map
 
@@ -431,7 +431,7 @@ class FileMetadata:
         if "fov_textlabel" in self.metadata.index:
             text_args = [fov_coords[0], self.metadata.fov_textlabel]
             # text_kwargs = {"rotation": "vertical", "ha": "right"}
-            text_kwargs = {"rotation": 0, "ha": "right", "fontsize": 25}
+            text_kwargs = {"rotation": 0, "ha": "right", "fontsize": numberlabel_fontsize}
             # text_kwargs = {"rotation": 0, "ha": "right"}
 
             if "fov_color" in self.metadata.index:

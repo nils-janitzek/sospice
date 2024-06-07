@@ -16,7 +16,7 @@ from sunpy.net import Fido, attrs
 import sunpy_soar  # noqa: F401
 
 from ..catalog import Catalog, FileMetadata
-
+import warnings
 
 # set global figure fontsize parameters
 plt.rcParams["axes.labelsize"] = "xx-large"
@@ -160,7 +160,7 @@ class FovBackground:
 
     def plot_blank_helioprojective(self):
         """
-        Plot Solar Orbiter/EUI/FSI map, intended as a background for plotting SPICE FOVs
+        Plot blank map, intended as a background for plotting SPICE FOVs
 
         Return
         ------
@@ -175,6 +175,7 @@ class FovBackground:
         obs_heligraphic_sth = self.observer
         obstime = self.observer.obstime
         # obs_helioprojective=obs_heligraphic_sth.transform_to(frames.Helioprojective)
+        #print("self.observer", self.observer)
 
         skycoord = SkyCoord(
             0 * u.arcsec,
@@ -260,7 +261,7 @@ def plot_fov_background(
 
 
 def plot_fovs_with_background(
-    cat,
+    cat, Nfov_max=12, legend_fontsize="standard", legend_ncol="standard", numberlabel_fontsize=25,
     map_type=None,
     time=None,
     observer=None,
@@ -278,6 +279,14 @@ def plot_fovs_with_background(
     ----------
     cat: sospice.Catalog
         SPICE observations
+    Nfov_max: int
+        maximum number of shown field-of-views
+    legend_fontsize: "standard" or int     
+        fontsize of legend
+    legend_ncol: "standard" or int     
+        number of columns in legend
+    numberlabel_fontsize: int
+        fontsize of annotated number label in plot
     map_type: str
         Type of background map
     time: datetime.datetime, astropy.time.Time, pandas.Timestamp...
@@ -304,6 +313,7 @@ def plot_fovs_with_background(
     matplotlib.axes.Axes
         Axes (with relevant projection)
     """
+    warnings.filterwarnings("ignore")
     if fig is None or ax is None:
         fig, ax = plot_fov_background(
             map_type=map_type,
@@ -313,5 +323,5 @@ def plot_fovs_with_background(
             show=False,
             **bg_kwargs,
         )
-    cat.plot_fov(ax, **kwargs)
+    cat.plot_fov(ax, Nfov_max, legend_fontsize, legend_ncol, numberlabel_fontsize, **kwargs)
     return _show_or_save(fig, ax, show, save)
